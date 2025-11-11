@@ -10,7 +10,7 @@ st.title("🤖 AI-Powered Report Builder")
 # Upload CSV
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
-if uploaded_file and api_key:
+if uploaded_file :
     # Read CSV
     df = pd.read_csv(uploaded_file)
     st.subheader("📊 Data Preview")
