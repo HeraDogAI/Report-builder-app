@@ -5,8 +5,7 @@ from openai import OpenAI
 # --- SETUP ---
 st.title("🤖 AI-Powered Report Builder")
 
-# Ask user for their OpenAI API key
-api_key = st.text_input("Enter your OpenAI API key:", type="password")
+
 
 # Upload CSV
 uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
