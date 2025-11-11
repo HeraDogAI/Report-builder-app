@@ -1,26 +1,31 @@
 import streamlit as st
 import pandas as pd
+import os
 from openai import OpenAI
 
-# --- SETUP ---
+# --- APP SETUP ---
+st.set_page_config(page_title="AI Report Builder", layout="wide")
 st.title("🤖 AI-Powered Report Builder")
 
+# --- GET OPENAI API KEY FROM ENVIRONMENT ---
+api_key = os.getenv("OPENAI_API_KEY")
 
+if not api_key:
+    st.error("⚠️ OpenAI API key not found. Set OPENAI_API_KEY in Streamlit secrets or environment variables.")
+    st.stop()
 
-# Upload CSV
-uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
+# --- FILE UPLOAD ---
+uploaded_file = st.file_uploader("📂 Upload a CSV file", type=["csv"])
 
-if uploaded_file :
-    # Read CSV
+if uploaded_file:
+    # --- READ DATA ---
     df = pd.read_csv(uploaded_file)
     st.subheader("📊 Data Preview")
     st.dataframe(df.head())
 
-    # Generate summary statistics
-    summary = df.describe().to_string()
-
-    # Display basic stats
+    # --- SUMMARY STATS ---
     st.subheader("📈 Summary Statistics")
+    summary = df.describe().to_string()
     st.text(summary)
 
     # --- AI ANALYSIS ---
@@ -29,7 +34,7 @@ if uploaded_file :
             client = OpenAI(api_key=api_key)
 
             prompt = f"""
-            You are a data analyst. Write a clear, insightful summary of this dataset
+            You are a professional data analyst. Write a clear, insightful summary of this dataset
             based on the following summary statistics:
             {summary}
             """
@@ -46,4 +51,4 @@ if uploaded_file :
             st.write(response.choices[0].message.content)
 
 else:
-    st.info("👆 Upload a CSV and enter your API key to get started.")
+    st.info("👆 Upload a CSV to get started.")
