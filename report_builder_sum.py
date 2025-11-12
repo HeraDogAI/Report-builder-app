@@ -89,47 +89,6 @@ if uploaded_file:
                 st.subheader("📝 AI Summary")
                 st.write(response.choices[0].message.content)
 
-  # --- DOWNLOAD REPORT AS PDF ---
-        if ai_summary:
-            if st.button("📄 Download Report as PDF"):
-                buffer = BytesIO()
-                doc = SimpleDocTemplate(buffer, pagesize=letter)
-                styles = getSampleStyleSheet()
-                story = []
-
-                story.append(Paragraph("AI Report Builder Summary", styles["Title"]))
-                story.append(Spacer(1, 12))
-                story.append(Paragraph("Dataset Summary Statistics", styles["Heading2"]))
-                story.append(Spacer(1, 8))
-
-                # Convert summary stats to table
-                stats_data = df.describe().reset_index()
-                table_data = [stats_data.columns.tolist()] + stats_data.values.tolist()
-                table = Table(table_data)
-                table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#00BFFF")),
-                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER')
-                ]))
-                story.append(table)
-                story.append(Spacer(1, 12))
-
-                story.append(Paragraph("AI-Generated Insights", styles["Heading2"]))
-                story.append(Spacer(1, 8))
-                story.append(Paragraph(ai_summary.replace("\n", "<br/>"), styles["Normal"]))
-
-                doc.build(story)
-                buffer.seek(0)
-
-                st.download_button(
-                    label="⬇️ Download PDF Report",
-                    data=buffer,
-                    file_name="AI_Report.pdf",
-                    mime="application/pdf"
-                )
-
     except Exception as e:
         st.error(f"Error loading file: {e}")
 
