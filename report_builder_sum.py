@@ -43,7 +43,7 @@ if uploaded_file:
                 color = st.color_picker("Pick chart color:", "#00BFFF")
 
             x_axis = st.selectbox("X-axis", df.columns)
-            y_axis = st.multiselect("Y-axis (you can choose multiple):", numeric_cols, default=[numeric_cols[0]])
+            y_axis = st.selectbox("Y-axis", df.columns)
 
             if st.button("📊 Generate Chart"):
                 if not y_axis:
