@@ -1,14 +1,21 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import os
 from openai import OpenAI
 
 # --- PAGE SETUP ---
 st.set_page_config(page_title="AI Report Builder", layout="wide")
 st.title("🤖 AI-Powered Report Builder")
 
-# --- API KEY INPUT ---
-api_key = st.text_input("Enter your OpenAI API key:", type="password")
+# --- LOAD API KEY (FROM ENV OR SECRETS) ---
+api_key = os.getenv("OPENAI_API_KEY")  # looks for a system or Streamlit secret
+
+if not api_key:
+    st.error("⚠️ Missing OpenAI API key. Add it to your Streamlit secrets or environment variables.")
+    st.stop()
+
+client = OpenAI(api_key=api_key)
 
 # --- FILE UPLOAD ---
 uploaded_file = st.file_uploader("📂 Upload a CSV file", type=["csv"])
@@ -59,32 +66,26 @@ if uploaded_file:
             st.warning("⚠️ No numeric columns found for visualization.")
 
         # --- AI ANALYSIS SECTION ---
-        if api_key:
-            if st.button("🧠 Generate AI Summary"):
-                with st.spinner("Analyzing your data..."):
-                    client = OpenAI(api_key=api_key)
+if st.button("🧠 Generate AI Summary"):
+    with st.spinner("Analyzing your data..."):
+        summary = df.describe().to_string()
+        prompt = f"""
+        You are a data analyst. Write a clear, insightful summary of this dataset
+        based on the following summary statistics:
+        {summary}
+        """
 
-                    summary = df.describe().to_string()
-                    prompt = f"""
-                    You are a data analyst. Write a clear, insightful summary of this dataset
-                    based on the following summary statistics:
-                    {summary}
-                    """
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a helpful data analyst."},
+                {"role": "user", "content": prompt}
+            ],
+        )
 
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {"role": "system", "content": "You are a helpful data analyst."},
-                            {"role": "user", "content": prompt}
-                        ],
-                    )
+        st.subheader("📝 AI Summary")
+        st.write(response.choices[0].message.content)
 
-                    st.subheader("📝 AI Summary")
-                    st.write(response.choices[0].message.content)
-        else:
-            st.info("🔑 Enter your API key to enable AI summaries.")
-
-    except Exception as e:
         st.error(f"Error loading file: {e}")
 
 else:
