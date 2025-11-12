@@ -8,9 +8,8 @@ from openai import OpenAI
 st.set_page_config(page_title="AI Report Builder", layout="wide")
 st.title("🤖 AI-Powered Report Builder")
 
-# --- LOAD API KEY (FROM ENV OR SECRETS) ---
-api_key = os.getenv("OPENAI_API_KEY")  # looks for a system or Streamlit secret
-
+# --- LOAD OPENAI API KEY (FROM ENV OR SECRETS) ---
+api_key = os.getenv("OPENAI_API_KEY")  # Read key from environment or Streamlit secrets
 if not api_key:
     st.error("⚠️ Missing OpenAI API key. Add it to your Streamlit secrets or environment variables.")
     st.stop()
@@ -21,8 +20,8 @@ client = OpenAI(api_key=api_key)
 uploaded_file = st.file_uploader("📂 Upload a CSV file", type=["csv"])
 
 if uploaded_file:
-    # --- READ DATA ---
     try:
+        # --- READ DATA ---
         df = pd.read_csv(uploaded_file, encoding="latin1")
         st.subheader("📊 Data Preview")
         st.dataframe(df.head())
@@ -44,48 +43,53 @@ if uploaded_file:
                 color = st.color_picker("Pick chart color:", "#00BFFF")
 
             x_axis = st.selectbox("X-axis", df.columns)
-            y_axis = st.selectbox("Y-axis", df.columns)
+            y_axis = st.multiselect("Y-axis (you can choose multiple):", numeric_cols, default=[numeric_cols[0]])
 
             if st.button("📊 Generate Chart"):
-                if chart_type == "Line":
-                    fig = px.line(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart", color_discrete_sequence=[color])
-                elif chart_type == "Bar":
-                    fig = px.bar(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart", color_discrete_sequence=[color])
+                if not y_axis:
+                    st.warning("Please select at least one Y-axis column.")
                 else:
-                    fig = px.scatter(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart", color_discrete_sequence=[color])
+                    if chart_type == "Line":
+                        fig = px.line(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart", color_discrete_sequence=[color])
+                    elif chart_type == "Bar":
+                        fig = px.bar(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart", color_discrete_sequence=[color])
+                    else:
+                        # For scatter, use only first Y variable
+                        fig = px.scatter(df, x=x_axis, y=y_axis[0], title=f"{chart_type} Chart", color_discrete_sequence=[color])
 
-                fig.update_layout(
-                    title_x=0.5,
-                    template="plotly_white",
-                    title_font=dict(size=22),
-                    paper_bgcolor="#F9FAFB",
-                    plot_bgcolor="#F9FAFB"
-                )
-                st.plotly_chart(fig, use_container_width=True)
+                    fig.update_layout(
+                        title_x=0.5,
+                        template="plotly_white",
+                        title_font=dict(size=22),
+                        paper_bgcolor="#F9FAFB",
+                        plot_bgcolor="#F9FAFB"
+                    )
+                    st.plotly_chart(fig, use_container_width=True)
         else:
             st.warning("⚠️ No numeric columns found for visualization.")
 
         # --- AI ANALYSIS SECTION ---
-if st.button("🧠 Generate AI Summary"):
-    with st.spinner("Analyzing your data..."):
-        summary = df.describe().to_string()
-        prompt = f"""
-        You are a data analyst. Write a clear, insightful summary of this dataset
-        based on the following summary statistics:
-        {summary}
-        """
+        if st.button("🧠 Generate AI Summary"):
+            with st.spinner("Analyzing your data..."):
+                summary = df.describe().to_string()
+                prompt = f"""
+                You are a professional data analyst. Write a clear, insightful summary of this dataset
+                based on the following summary statistics:
+                {summary}
+                """
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a helpful data analyst."},
-                {"role": "user", "content": prompt}
-            ],
-        )
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": "You are a helpful data analyst."},
+                        {"role": "user", "content": prompt}
+                    ],
+                )
 
-        st.subheader("📝 AI Summary")
-        st.write(response.choices[0].message.content)
+                st.subheader("📝 AI Summary")
+                st.write(response.choices[0].message.content)
 
+    except Exception as e:
         st.error(f"Error loading file: {e}")
 
 else:
