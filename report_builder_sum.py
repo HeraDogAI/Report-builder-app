@@ -6,7 +6,8 @@ from openai import OpenAI
 
 # --- PAGE SETUP ---
 st.set_page_config(page_title="Reportify", layout="wide")
-st.title("🤖 AI-Powered Report Builder")
+st.title("PROMETHIX")
+st.subtitle("🤖 AI-Powered Report Builder")
 
 # --- LOAD OPENAI API KEY (FROM ENV OR SECRETS) ---
 api_key = os.getenv("OPENAI_API_KEY")  # Read key from environment or Streamlit secrets
