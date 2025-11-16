@@ -5,7 +5,7 @@ import os
 from openai import OpenAI
 
 # --- PAGE SETUP ---
-st.set_page_config(page_title="AI Report Builder", layout="wide")
+st.set_page_config(page_title="Reportify", layout="wide")
 st.title("🤖 AI-Powered Report Builder")
 
 # --- LOAD OPENAI API KEY (FROM ENV OR SECRETS) ---
