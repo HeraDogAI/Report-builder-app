@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st 
 import pandas as pd
 import plotly.express as px
 import os
@@ -95,37 +95,34 @@ if uploaded_file:
 
                 st.subheader("📝 AI Summary")
                 st.write(response.choices[0].message.content)
-                # --- AI QUESTION-ANSWERING ABOUT THE DATA ---
-st.subheader("❓ Ask Questions About the Dataset")
 
-user_question = st.text_input("Ask the AI anything about your data:")
+        # --- AI QUESTION-ANSWERING SECTION ---
+        st.subheader("❓ Ask Questions About the Dataset")
+        user_question = st.text_input("Ask the AI anything about your data:")
 
-if st.button("🔍 Get Answer"):
-    if user_question:
-        with st.spinner("Thinking..."):
-            prompt = f"""
-            You are a data expert. You are analyzing this dataset:
-            {df.to_string()}
+        if st.button("🔍 Get Answer"):
+            if user_question:
+                with st.spinner("Thinking..."):
+                    prompt = f"""
+                    You are a data expert. You are analyzing this dataset:
+                    {df.to_string()}
 
-            The user asked the following question about the dataset:
-            "{user_question}"
+                    The user asked the following question about the dataset:
+                    "{user_question}"
 
-            Provide a clear, specific, expert answer based ONLY on the dataset provided.
-            """
+                    Provide a clear, specific, expert answer based ONLY on the dataset provided.
+                    """
 
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "You are a data analysis assistant."},
-                    {"role": "user", "content": prompt}
-                ],
-            )
+                    response = client.chat.completions.create(
+                        model="gpt-4o-mini",
+                        messages=[
+                            {"role": "system", "content": "You are a data analysis assistant."},
+                            {"role": "user", "content": prompt}
+                        ],
+                    )
 
-            st.subheader("💡 AI Answer")
-            st.write(response.choices[0].message.content)
-    else:
-        st.warning("Please enter a question.")
-
+                    st.subheader("💡 AI Answer")
+                    st.write(response.choices[0].message.content)
 
     except Exception as e:
         st.error(f"Error loading file: {e}")
