@@ -49,19 +49,23 @@ if uploaded_file:
             with col2:
                 color = st.color_picker("Pick chart color:", "#00BFFF")
 
-            if chart_type != "Pie":
+            # --- PIE CHART SELECTIONS ---
+            if chart_type == "Pie":
+                if categorical_cols and numeric_cols:
+                    pie_cat = st.selectbox("Categorical column for slices:", categorical_cols)
+                    pie_val = st.selectbox("Numeric column for values:", numeric_cols)
+                else:
+                    st.warning("⚠️ Pie chart requires at least one categorical and one numeric column.")
+            else:
                 x_axis = st.selectbox("X-axis", df.columns)
                 y_axis = st.selectbox("Y-axis", df.columns)
 
+            # --- GENERATE CHART ---
             if st.button("📊 Generate Chart"):
                 if chart_type == "Pie":
                     if categorical_cols and numeric_cols:
-                        pie_cat = st.selectbox("Categorical column for slices:", categorical_cols)
-                        pie_val = st.selectbox("Numeric column for values:", numeric_cols)
                         fig = px.pie(df, names=pie_cat, values=pie_val, title=f"Pie Chart of {pie_cat}")
                         st.plotly_chart(fig, use_container_width=True)
-                    else:
-                        st.warning("⚠️ Pie chart requires at least one categorical and one numeric column.")
                 else:
                     if not y_axis:
                         st.warning("Please select at least one Y-axis column.")
@@ -88,56 +92,3 @@ if uploaded_file:
             st.warning("⚠️ No numeric columns found for visualization.")
 
         # --- AI ANALYSIS SECTION ---
-        if st.button("🧠 Generate AI Summary"):
-            with st.spinner("Analyzing your data..."):
-                summary = df.describe().to_string()
-                prompt = f"""
-                You are a professional data analyst. Write a clear, specific, insightful summary of this dataset
-                based on the following summary statistics:
-                {summary}
-                """
-
-                response = client.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role": "system", "content": "You are a helpful data analyst."},
-                        {"role": "user", "content": prompt}
-                    ],
-                )
-
-                st.subheader("📝 AI Summary")
-                st.write(response.choices[0].message.content)
-
-        # --- AI QUESTION-ANSWERING SECTION ---
-        st.subheader("❓ Ask Questions About the Dataset")
-        user_question = st.text_input("Ask the AI anything about your data:")
-
-        if st.button("🔍 Get Answer"):
-            if user_question:
-                with st.spinner("Thinking..."):
-                    prompt = f"""
-                    You are a data expert. You are analyzing this dataset:
-                    {df.to_string()}
-
-                    The user asked the following question about the dataset:
-                    "{user_question}"
-
-                    Provide a clear, specific, expert answer based ONLY on the dataset provided.
-                    """
-
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {"role": "system", "content": "You are a data analysis assistant."},
-                            {"role": "user", "content": prompt}
-                        ],
-                    )
-
-                    st.subheader("💡 AI Answer")
-                    st.write(response.choices[0].message.content)
-
-    except Exception as e:
-        st.error(f"Error loading file: {e}")
-
-else:
-    st.info("👆 Upload a CSV to begin.")
