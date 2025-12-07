@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
@@ -39,39 +39,51 @@ if uploaded_file:
         st.subheader("📉 Data Visualization")
 
         numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
+        categorical_cols = df.select_dtypes(include=["object", "category"]).columns.tolist()
+
         if numeric_cols:
             col1, col2 = st.columns(2)
 
             with col1:
-                chart_type = st.selectbox("Select chart type:", ["Line", "Bar", "Scatter"])
+                chart_type = st.selectbox("Select chart type:", ["Line", "Bar", "Scatter", "Pie"])
             with col2:
                 color = st.color_picker("Pick chart color:", "#00BFFF")
 
-            x_axis = st.selectbox("X-axis", df.columns)
-            y_axis = st.selectbox("Y-axis", df.columns)
+            if chart_type != "Pie":
+                x_axis = st.selectbox("X-axis", df.columns)
+                y_axis = st.selectbox("Y-axis", df.columns)
 
             if st.button("📊 Generate Chart"):
-                if not y_axis:
-                    st.warning("Please select at least one Y-axis column.")
-                else:
-                    if chart_type == "Line":
-                        fig = px.line(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
-                                      color_discrete_sequence=[color])
-                    elif chart_type == "Bar":
-                        fig = px.bar(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
-                                     color_discrete_sequence=[color])
+                if chart_type == "Pie":
+                    if categorical_cols and numeric_cols:
+                        pie_cat = st.selectbox("Categorical column for slices:", categorical_cols)
+                        pie_val = st.selectbox("Numeric column for values:", numeric_cols)
+                        fig = px.pie(df, names=pie_cat, values=pie_val, title=f"Pie Chart of {pie_cat}")
+                        st.plotly_chart(fig, use_container_width=True)
                     else:
-                        fig = px.scatter(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
+                        st.warning("⚠️ Pie chart requires at least one categorical and one numeric column.")
+                else:
+                    if not y_axis:
+                        st.warning("Please select at least one Y-axis column.")
+                    else:
+                        if chart_type == "Line":
+                            fig = px.line(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
+                                          color_discrete_sequence=[color])
+                        elif chart_type == "Bar":
+                            fig = px.bar(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
                                          color_discrete_sequence=[color])
+                        else:
+                            fig = px.scatter(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
+                                             color_discrete_sequence=[color])
 
-                    fig.update_layout(
-                        title_x=0.5,
-                        template="plotly_white",
-                        title_font=dict(size=22),
-                        paper_bgcolor="#F9FAFB",
-                        plot_bgcolor="#F9FAFB"
-                    )
-                    st.plotly_chart(fig, use_container_width=True)
+                        fig.update_layout(
+                            title_x=0.5,
+                            template="plotly_white",
+                            title_font=dict(size=22),
+                            paper_bgcolor="#F9FAFB",
+                            plot_bgcolor="#F9FAFB"
+                        )
+                        st.plotly_chart(fig, use_container_width=True)
         else:
             st.warning("⚠️ No numeric columns found for visualization.")
 
