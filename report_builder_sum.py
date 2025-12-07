@@ -23,8 +23,13 @@ if uploaded_file:
     try:
         # --- READ DATA ---
         df = pd.read_csv(uploaded_file, encoding="latin1")
+
         st.subheader("📊 Data Preview")
         st.dataframe(df.head())
+
+        # --- FULL DATASET VIEWER ---
+        with st.expander("📄 Open Full Dataset (View Entire Table)"):
+            st.dataframe(df)
 
         # --- SUMMARY STATS ---
         st.subheader("📈 Summary Statistics")
@@ -50,12 +55,14 @@ if uploaded_file:
                     st.warning("Please select at least one Y-axis column.")
                 else:
                     if chart_type == "Line":
-                        fig = px.line(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart", color_discrete_sequence=[color])
+                        fig = px.line(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
+                                      color_discrete_sequence=[color])
                     elif chart_type == "Bar":
-                        fig = px.bar(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart", color_discrete_sequence=[color])
+                        fig = px.bar(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
+                                     color_discrete_sequence=[color])
                     else:
-                        # For scatter, use only first Y variable
-                        fig = px.scatter(df, x=x_axis, y=y_axis[0], title=f"{chart_type} Chart", color_discrete_sequence=[color])
+                        fig = px.scatter(df, x=x_axis, y=y_axis, title=f"{chart_type} Chart",
+                                         color_discrete_sequence=[color])
 
                     fig.update_layout(
                         title_x=0.5,
@@ -73,7 +80,7 @@ if uploaded_file:
             with st.spinner("Analyzing your data..."):
                 summary = df.describe().to_string()
                 prompt = f"""
-                You are a professional data analyst. Write a clear, insightful summary of this dataset
+                You are a professional data analyst. Write a clear, specific, insightful summary of this dataset
                 based on the following summary statistics:
                 {summary}
                 """
