@@ -94,11 +94,16 @@ if uploaded_file:
         # --- AI ANALYSIS SECTION ---
         if st.button("🧠 Generate AI Summary"):
             with st.spinner("Analyzing your data..."):
-                summary = df.describe().to_string()
+                sample_data = df.head(50).to_string()
+                summary_stats = df.describe().to_string()
+
                 prompt = f"""
-                You are a professional data analyst. Write a clear, specific, insightful summary of this dataset
-                based on the following summary statistics:
-                {summary}
+                You are a professional data analyst. Write a clear, specific, and insightful summary of this dataset.
+                Here are summary statistics of the numeric columns:
+                {summary_stats}
+
+                And here are the first 50 rows of the dataset:
+                {sample_data}
                 """
 
                 response = client.chat.completions.create(
@@ -119,11 +124,18 @@ if uploaded_file:
         if st.button("🔍 Get Answer"):
             if user_question:
                 with st.spinner("Thinking..."):
-                    prompt = f"""
-                    You are a data expert. You are analyzing this dataset:
-                    {df.to_string()}
+                    sample_data = df.head(50).to_string()
+                    summary_stats = df.describe().to_string()
 
-                    The user asked the following question about the dataset:
+                    prompt = f"""
+                    You are a data expert analyzing a dataset. 
+                    Here are summary statistics of the numeric columns:
+                    {summary_stats}
+
+                    And here are the first 50 rows of the dataset:
+                    {sample_data}
+
+                    The user asked the following question:
                     "{user_question}"
 
                     Provide a clear, specific, expert answer based ONLY on the dataset provided.
