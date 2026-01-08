@@ -56,7 +56,7 @@ def paywall():
             st.markdown("### 💳 Upgrade for Full Access")
             st.markdown(
                 """
-                <a href="https://checkout.stripe.com/c/pay/YOUR_STRIPE_LINK_HERE" target="_blank">
+                <a href="https://checkout.stripe.com/c/pay/https://buy.stripe.com/00w5kCbeq4TMces6Ok9MY00" target="_blank">
                     <button style="padding:15px; font-size:18px; background:#0066ff; color:white; border-radius:8px; border:none; cursor:pointer;">
                         Upgrade with Stripe
                     </button>
