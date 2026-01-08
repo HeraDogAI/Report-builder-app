@@ -1,4 +1,83 @@
 import streamlit as st
+import json
+import datetime
+
+# Load trial data
+if "trial_data" not in st.session_state:
+    try:
+        st.session_state.trial_data = json.loads(st.secrets["TRIAL_START_DATES"])
+    except:
+        st.session_state.trial_data = {}
+
+def save_trial_data():
+    """Helper to show updated JSON so you can paste back into secrets."""
+    st.code(json.dumps(st.session_state.trial_data, indent=4))
+
+def paywall():
+    st.title("🔒 Promethix Access")
+    st.write("Start your **2-week free trial** or unlock full access.")
+
+    email = st.text_input("Enter your email to continue:")
+
+    if st.button("Continue"):
+        if not email:
+            st.error("Please enter an email.")
+            return
+
+        paid_users = [u.strip().lower() for u in st.secrets["PAID_USERS"].split(",")]
+
+        # If user already paid → unlock immediately
+        if email.lower() in paid_users:
+            st.success("Welcome back! Premium access unlocked.")
+            st.session_state["access_granted"] = True
+            return
+
+        # If new → start trial
+        if email.lower() not in st.session_state.trial_data:
+            st.session_state.trial_data[email.lower()] = {
+                "start": str(datetime.date.today())
+            }
+            st.success("🎉 Your 2-week free trial has started!")
+            st.session_state["access_granted"] = True
+            st.stop()
+
+        # Existing trial user
+        start_date = datetime.date.fromisoformat(
+            st.session_state.trial_data[email.lower()]["start"]
+        )
+        days_used = (datetime.date.today() - start_date).days
+
+        if days_used <= 14:
+            st.success(f"Trial active — {14 - days_used} days remaining.")
+            st.session_state["access_granted"] = True
+        else:
+            st.error("Your free trial has ended.")
+
+            st.markdown("### 💳 Upgrade for Full Access")
+            st.markdown(
+                """
+                <a href="https://checkout.stripe.com/c/pay/YOUR_STRIPE_LINK_HERE" target="_blank">
+                    <button style="padding:15px; font-size:18px; background:#0066ff; color:white; border-radius:8px; border:none; cursor:pointer;">
+                        Upgrade with Stripe
+                    </button>
+                </a>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.info("After payment, your email will be activated.")
+
+            st.subheader("🔧 Admin: Copy trial JSON to update secrets")
+            save_trial_data()
+
+            st.stop()
+
+# Redirect if not logged in
+if "access_granted" not in st.session_state:
+    paywall()
+    st.stop()
+
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 import os
