@@ -6,6 +6,101 @@ import json
 import datetime
 from openai import OpenAI
 
+# ==============================
+# 🔐 PAYWALL CONFIG
+# ==============================
+
+STRIPE_CHECKOUT_LINK = "https://buy.stripe.com/00w5kCbeq4TMces6Ok9MY00"
+
+# Load saved user data (email + trial dates + paid users)
+if "paid_users" not in st.session_state:
+    st.session_state.paid_users = set()
+
+if "trial_start" not in st.session_state:
+    st.session_state.trial_start = {}
+
+# Load database file in Cloud or Locally
+DB_FILE = "user_db.json"
+
+if os.path.exists(DB_FILE):
+    with open(DB_FILE, "r") as f:
+        db = json.load(f)
+else:
+    db = {"paid_users": [], "trial_start": {}}
+
+# Sync with session_state
+st.session_state.paid_users = set(db.get("paid_users", []))
+st.session_state.trial_start = db.get("trial_start", {})
+
+def save_db():
+    with open(DB_FILE, "w") as f:
+        json.dump({
+            "paid_users": list(st.session_state.paid_users),
+            "trial_start": st.session_state.trial_start
+        }, f)
+
+
+# ==============================
+# 🔐 ASK USER FOR EMAIL
+# ==============================
+
+st.sidebar.header("🔐 Access Required")
+
+user_email = st.sidebar.text_input("Enter your email to use the app")
+
+if not user_email:
+    st.stop()
+
+today = datetime.date.today()
+
+# ==============================
+# 🔐 CHECK PAYMENT STATUS
+# ==============================
+
+# If user has paid → Full Access
+if user_email in st.session_state.paid_users:
+    st.sidebar.success("✔ Full Access Unlocked")
+else:
+    # Start trial if no record
+    if user_email not in st.session_state.trial_start:
+        st.session_state.trial_start[user_email] = str(today)
+        save_db()
+
+    # Check days remaining
+    start_date = datetime.date.fromisoformat(st.session_state.trial_start[user_email])
+    days_used = (today - start_date).days
+    days_left = 14 - days_used
+
+    if days_left > 0:
+        st.sidebar.info(f"🎉 Free Trial Active — {days_left} days left")
+    else:
+        # ==============================
+        # 🔥 TRIAL EXPIRED → PAYWALL
+        # ==============================
+        st.error("⛔ Your 14-day free trial has ended.")
+
+        st.write("To continue using Promethix, purchase full access:")
+
+        st.markdown(
+            f"""
+            <a href="{STRIPE_CHECKOUT_LINK}" target="_blank">
+                <button style="
+                    background-color:#4CAF50;
+                    color:white;
+                    padding: 12px 20px;
+                    border:none;
+                    border-radius:8px;
+                    font-size:18px;
+                    cursor:pointer;
+                ">💳 Upgrade Now</button>
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.stop()
+
+
 # --- PAGE SETUP ---
 st.set_page_config(page_title="Promethix", layout="wide")
 st.title("🤖 AI-Powered Report Builder")
