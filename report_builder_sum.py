@@ -39,7 +39,9 @@ def record_ai_use():
 
 
 # --- TRIAL + PAYWALL SYSTEM ---
-# Load stored trial data (from secrets)
+STRIPE_CHECKOUT_URL = "https://buy.stripe.com/00w5kCbeq4TMces6Ok9MY00"
+
+# Load stored trials from secrets
 try:
     initial_trial_data = json.loads(st.secrets["TRIAL_START_DATES"])
 except:
@@ -48,78 +50,63 @@ except:
 if "trial_data" not in st.session_state:
     st.session_state.trial_data = initial_trial_data
 
-def save_trial_data():
-    """Show updated JSON so admin can paste into secrets."""
-    st.code(json.dumps(st.session_state.trial_data, indent=4))
+# Track usage WITHOUT email first
+if "user_id" not in st.session_state:
+    st.session_state.user_id = f"anon_{datetime.datetime.utcnow().timestamp()}"
 
+user_id = st.session_state.user_id
 
-def paywall():
-    """Email-based 14-day free trial + Stripe upgrade button."""
-    st.title("🔒 Promethix Access Required")
+# If user has no existing trial, create one
+if user_id not in st.session_state.trial_data:
+    st.session_state.trial_data[user_id] = {
+        "start": str(datetime.date.today())
+    }
 
-    email = st.text_input("Enter your email to continue your free trial or upgrade:")
+start_date = datetime.date.fromisoformat(st.session_state.trial_data[user_id]["start"])
+days_used = (datetime.date.today() - start_date).days
+days_left = 14 - days_used
 
-    paid_users = [u.strip().lower() for u in st.secrets["PAID_USERS"].split(",")]
+def show_paywall():
+    """Display after user hits limit OR after trial ends."""
+    st.error("⛔ Your free trial has expired.")
 
-    if st.button("Continue"):
-        if not email:
-            st.error("Please enter an email.")
-            return
+    st.markdown("### 💳 Upgrade for Full Access")
+    st.markdown(
+        f"""
+        <a href="{STRIPE_CHECKOUT_URL}" target="_blank">
+            <button style="
+                padding:15px;
+                font-size:18px;
+                background:#0066ff;
+                color:white;
+                border-radius:8px;
+                border:none;
+                cursor:pointer;
+                width: 100%;
+            ">
+                Upgrade via Stripe — $9.99/month
+            </button>
+        </a>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        # Paid user → unlock immediately
-        if email.lower() in paid_users:
-            st.success("Welcome back! You have full access.")
-            st.session_state["access_granted"] = True
-            return
+    st.info("Reload the page after purchase to unlock access.")
+    st.stop()
 
-        # Start trial for new user
-        if email.lower() not in st.session_state.trial_data:
-            st.session_state.trial_data[email.lower()] = {
-                "start": str(datetime.date.today())
-            }
-            st.success("🎉 Your 14-day free trial has begun!")
-            st.session_state["access_granted"] = True
-            return
+# If trial expired → paywall
+if days_used > 14:
+    show_paywall()
 
-        # Existing trial user
-        start_date = datetime.date.fromisoformat(
-            st.session_state.trial_data[email.lower()]["start"]
-        )
-        days_used = (datetime.date.today() - start_date).days
+# If usage hits limit → stop AI features
+def check_usage():
+    if st.session_state.free_uses >= FREE_LIMIT:
+        st.warning("🔒 You've reached your 3 free AI uses.")
+        st.info(f"Your 14-day trial has {days_left} days left.")
+        show_paywall()
 
-        if days_used <= 14:
-            st.success(f"Trial active — {14 - days_used} days left.")
-            st.session_state["access_granted"] = True
-        else:
-            st.error("Your free trial has ended.")
-
-            st.markdown("### 💳 Upgrade for Full Access")
-            st.markdown(
-                """
-                <a href="https://buy.stripe.com/00w5kCbeq4TMces6Ok9MY00" target="_blank">
-                    <button style="
-                        padding:15px;
-                        font-size:18px;
-                        background:#0066ff;
-                        color:white;
-                        border-radius:8px;
-                        border:none;
-                        cursor:pointer;
-                        width: 100%;
-                    ">
-                        Upgrade via Stripe — $9.99/month
-                    </button>
-                </a>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.subheader("🔧 Admin: Paste this back into secrets")
-            save_trial_data()
-
-            st.stop()
-
-
+def record_ai_use():
+    st.session_state.free_uses += 1
 
 # --- FILE UPLOAD ---
 uploaded_file = st.file_uploader("📂 Upload a CSV file", type=["csv"])
