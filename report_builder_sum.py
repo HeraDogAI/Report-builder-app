@@ -68,9 +68,9 @@ days_left = 14 - days_used
 
 def show_paywall():
     """Display after user hits limit OR after trial ends."""
-    st.error("⛔ Your free trial has expired.")
+    st.error("⛔ Your 3 free tries have expired.")
 
-    st.markdown("### 💳 Upgrade for Full Access")
+    st.markdown("### 💳 Try Promethix FREE for 14 Days!")
     st.markdown(
         f"""
         <a href="{STRIPE_CHECKOUT_URL}" target="_blank">
